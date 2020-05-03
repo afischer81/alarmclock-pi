@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 import calendar
+import copy
 import datetime
 import enum
-import locale
 import logging
+import multiprocessing 
 import os
 import sys
 
@@ -13,8 +14,6 @@ from pygame.locals import *
 
 import requests
 
-#from screen import screen
-
 class ClockState(enum.Enum):
     RUN = 1
     ALARM = 2
@@ -22,7 +21,7 @@ class ClockState(enum.Enum):
 
 class AlarmClock:
     """
-    Alarmclock for Raspberry Pi 7" WaveShare touch screen display
+    Alarmclock for Raspberry Pi 7" touch screen display
     """
 
     def __init__(self, size=(800,480), logger=None) :
@@ -36,11 +35,13 @@ class AlarmClock:
         self.bg_color = (0, 0, 0)
         self.ui_event = {}
         self.state = ClockState.RUN
-        self.alarm_days = { "Mo" : True, "Di" : True, "Mi": True, "Do" : True, "Fr" : True, "Sa" : True, "So" : False }
+        self.alarm_days = { "Mo" : True, "Di" : True, "Mi": True, "Do" : True, "Fr" : True, "Sa" : True, "So" : True }
         self.current_alarm = "7:00"
         self.alarm_sound = 'sounds/Dominion.mp3'
         self.alarm_volume = [ 0.25, 0.9 ]
+        self.alarm_start = None
         self.alarm_length = 60 # seconds
+        self.alarm_process = None
 
         from evdev import InputDevice, list_devices
         devices = map(InputDevice, list_devices())
@@ -77,6 +78,17 @@ class AlarmClock:
         self.text_font = pygame.font.Font('/usr/share/fonts/truetype/freefont/FreeSansBold.ttf', round(self.h * 0.08))
         self.time_font = pygame.font.Font('font/gluqlo.ttf', round(self.h * 0.6))
     
+    def set_brightness(self, level):
+        value = round(level * 255)
+        with open('/sys/class/backlight/rpi_backlight/actual_brightness', 'w') as f:
+            f.write(value)
+    
+    def get_brightness(self):
+        level = 0.0
+        with open('/sys/class/backlight/rpi_backlight/actual_brightness') as f:
+            level = float(f.read()) / 255.0
+        return level
+
     def render_time(self, time, color):
         """
         Draw the current time in the center part.
@@ -168,8 +180,6 @@ class AlarmClock:
         pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=4096)
         pygame.mixer.init()
         vol = self.alarm_volume[0]
-        #r = requests.get(self.alarm_sound_url, stream=True)
-        #pygame.mixer.music.load(r.content)
         pygame.mixer.music.load(self.alarm_sound)
         pygame.mixer.music.set_volume(vol)
         pygame.mixer.music.play(-1)
@@ -179,9 +189,9 @@ class AlarmClock:
                 vol += 0.05
                 self.log.info('volume {0}'.format(vol))
             pygame.mixer.music.set_volume(vol)
-            if ((datetime.datetime.now() - alarm_start_time) > datetime.timedelta(seconds = self.alarm_length)):
-                pygame.mixer.music.stop()
-                break
+            #if ((datetime.datetime.now() - alarm_start_time) > datetime.timedelta(seconds = self.alarm_length)):
+            #    pygame.mixer.music.stop()
+            #    break
             self.clock.tick(1)
         self.log.info('play_alarm finished')
 
@@ -190,16 +200,28 @@ class AlarmClock:
         last_date = None
         last_time = None
         last_alarm = None
+        last_state = None
 
         while True:
             
             now = datetime.datetime.now()
             current_day = now.strftime('%a')
             current_time = now.strftime('%-H:%M')
-            if self.alarm_days[current_day] and current_time == self.current_alarm:
+
+            #
+            # state handling
+            #
+            if self.state == ClockState.RUN and self.alarm_process is None and self.alarm_days[current_day] and current_time == self.current_alarm:
+                self.alarm_process = multiprocessing.Process(target=self.play_alarm)
+                self.alarm_start = now
+                self.alarm_process.start()
                 self.state = ClockState.ALARM
                 last_time = None
-                self.log.info('state {0}'.format(self.state))
+            if self.state == ClockState.ALARM and now - self.alarm_start > datetime.timedelta(seconds=self.alarm_length):
+                self.alarm_process.terminate()
+                self.alarm_process = None
+                self.state = ClockState.RUN
+                last_time = None
 
             for event in pygame.event.get():
                 if not event.type is MOUSEBUTTONUP:
@@ -240,6 +262,9 @@ class AlarmClock:
                             self.alarm_days[action] = not self.alarm_days[action]
                         self.current_alarm = '{0}:{1:02d}'.format(hh, mm)
 
+            if self.state != last_state:
+                self.log.info('state {0}'.format(self.state))
+
             if self.state == ClockState.EDIT:
                 if self.current_alarm != last_alarm:
                     self.render_time(self.current_alarm, self.alarm_color)
@@ -255,31 +280,49 @@ class AlarmClock:
                     last_date = current_date
 
                 if current_time != last_time:
-                    c = self.default_color
+                    c = copy.deepcopy(self.default_color)
                     if self.state == ClockState.ALARM:
                         c = (self.alarm_color[0], self.alarm_color[1], self.alarm_color[2])
                     self.render_time(current_time, c)
                     pygame.display.update()
                     last_time = current_time
-                    #self.log.debug('ui event {0}'.format(self.ui_event))
 
                 if self.current_alarm != last_alarm:
                     c = (self.alarm_color[0] * 0.5, self.alarm_color[1] * 0.5, self.alarm_color[2] * 0.5)
                     self.render_alarm(self.current_alarm, c)
                     pygame.display.update()
                     last_alarm = self.current_alarm
-                    #self.log.debug('ui event {0}'.format(self.ui_event))
+
+            last_state = self.state
             
             self.clock.tick(1)
     
 if __name__ == '__main__' :
-    locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
-    calendar.setfirstweekday(calendar.MONDAY)
+    import argparse
+    import locale
+
     self = os.path.basename(sys.argv[0])
     myName = os.path.splitext(self)[0]
     log = logging.getLogger(myName)
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-    log.setLevel(logging.INFO)
+
+    parser = argparse.ArgumentParser(description='Raspberry Pi alarm clock')
+    parser.add_argument('-a', '--alarm', default='15:51', help='alarm time')
+    parser.add_argument('-d', '--debug', action='store_true', help='debug execution')
+    parser.add_argument('--iobroker', default='192.168.137.83:8082', help='iobroker IP address and port')
+    parser.add_argument('-L', '--locale', default='de_DE.UTF-8', help='locale')
+    parser.add_argument('-s', '--sound', default='sounds/Dominion.mp3', help='alarm sound')
+    args = parser.parse_args(sys.argv[1:])
+
+    if args.debug:
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
+    locale.setlocale(locale.LC_ALL, args.locale)
+    calendar.setfirstweekday(calendar.MONDAY)
+ 
     clock = AlarmClock(logger=log)
+    clock.current_alarm = args.alarm
+    clock.alarm_sound = args.sound
     clock.run()
     #clock.play_alarm()
