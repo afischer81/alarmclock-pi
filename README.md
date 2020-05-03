@@ -17,6 +17,25 @@ It should
 * 7" TFT LCD touch display [RASPBERRY PI 7TD](https://www.reichelt.de/raspberry-pi-shield-display-lcd-touch-7-800x480-pixel-raspberry-pi-7td-p159859.html)
 * SD card with [Raspbian](https://www.raspberrypi.org/downloads/raspbian/) buster
 * Python 3 with packages [pygame](https://www.pygame.org/), [requests](https://github.com/psf/requests)
+* The digit font from [Gluqlo](https://github.com/alexanderk23/gluqlo.git)
+* Some [Flaticon](https://www.flaticon.com/) icons made by [Freepik](https://www.flaticon.com/authors/freepik)
+
+## Installation
+
+* Enable boot in graphical desktop with autologin
+* Create an .xsession file that disables screensaver, screen blanking and starts the clock in an eternal loop
+
+```
+sudo /usr/bin/xset s off
+sudo /usr/bin/xset -dpms
+sudo /usr/bin/xset s noblank
+
+cd projects/alarmclock-pi
+while :
+do
+    python3 alarmclock.py
+done
+```
 
 ## Usage
 
@@ -46,5 +65,6 @@ The alarm can be cancelled by clicking the alarm time.
 
 ## References
 
-[PyAlarmClock](https://github.com/rohrej/PyAlarmClock)
-[Gluqlo](https://github.com/alexanderk23/gluqlo.git)
+* [PyAlarmClock](https://github.com/rohrej/PyAlarmClock)
+* [Gluqlo](https://github.com/alexanderk23/gluqlo.git)
+* Icons made by [Freepik](https://www.flaticon.com/authors/freepik) from [Flaticon](https://www.flaticon.com/)
