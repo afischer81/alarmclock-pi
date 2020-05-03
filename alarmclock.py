@@ -35,7 +35,7 @@ class AlarmClock:
         self.bg_color = (0, 0, 0)
         self.ui_event = {}
         self.state = ClockState.RUN
-        self.alarm_days = { "Mo" : True, "Di" : True, "Mi": True, "Do" : True, "Fr" : True, "Sa" : True, "So" : True }
+        self.alarm_days = { "Mo" : True, "Di" : True, "Mi": True, "Do" : True, "Fr" : True, "Sa" : False, "So" : False }
         self.current_alarm = "7:00"
         self.alarm_sound = 'sounds/Dominion.mp3'
         self.alarm_volume = [ 0.25, 0.9 ]
@@ -77,17 +77,23 @@ class AlarmClock:
 
         self.text_font = pygame.font.Font('/usr/share/fonts/truetype/freefont/FreeSansBold.ttf', round(self.h * 0.08))
         self.time_font = pygame.font.Font('font/gluqlo.ttf', round(self.h * 0.6))
+
+        self.bright_down = pygame.image.load('icons/brightness_down.png')
+        self.bright_up = pygame.image.load('icons/brightness_up.png')
+
+        self.set_brightness(127)
     
-    def set_brightness(self, level):
-        value = round(level * 255)
-        with open('/sys/class/backlight/rpi_backlight/actual_brightness', 'w') as f:
-            f.write(value)
+    def set_brightness(self, value):
+        self.log.info('set_brightness({0})'.format(value))
+        with open('/sys/class/backlight/rpi_backlight/brightness', 'w') as f:
+            f.write('{0}'.format(value))
     
     def get_brightness(self):
-        level = 0.0
+        value = 0
         with open('/sys/class/backlight/rpi_backlight/actual_brightness') as f:
-            level = float(f.read()) / 255.0
-        return level
+            value = int(f.read())
+        self.log.info('get_brightness() {0}'.format(value))
+        return value
 
     def render_time(self, time, color):
         """
@@ -142,6 +148,11 @@ class AlarmClock:
         self.screen.fill(self.bg_color, rect=(0.075 * self.w, y, 0.85 * self.w, s[1]))
         surface = self.text_font.render(alarm, True, color)
         self.screen.blit(surface, (x, y))
+        x = round(0.075 * self.w)
+        self.screen.blit(self.bright_down, (x, y))
+        self.ui_event["bright-"] = pygame.Rect(x, y, 32, 32)
+        self.screen.blit(self.bright_up, (x + 40, y))
+        self.ui_event["bright+"] = pygame.Rect(x + 40, y, 32, 32)
 
     def render_edit(self):
         """
@@ -244,7 +255,14 @@ class AlarmClock:
                         last_time = None
                     self.log.info('state {0}'.format(self.state))
                 elif not action is None:
-                    if self.state == ClockState.EDIT:
+                    if self.state == ClockState.RUN:
+                        brightness = self.get_brightness()
+                        if action == 'bright-' and brightness >= 40:
+                            brightness -= 20
+                        elif action == 'bright+' and brightness <= 245:
+                            brightness += 20
+                        self.set_brightness(brightness)
+                    elif self.state == ClockState.EDIT:
                         [ hh, mm ] = self.current_alarm.split(':')
                         hh = int(hh)
                         mm = int(mm)
@@ -274,7 +292,7 @@ class AlarmClock:
             else:
                 current_date = now.strftime('%a %d. %b, %W. Woche')
                 if current_date != last_date:
-                    c = (self.default_color[0] * 0.5, self.default_color[1] * 0.5, self.default_color[2] * 0.5)
+                    c = (self.default_color[0] * 0.75, self.default_color[1] * 0.75, self.default_color[2] * 0.75)
                     self.render_date(current_date, c)
                     pygame.display.update()
                     last_date = current_date
@@ -288,7 +306,7 @@ class AlarmClock:
                     last_time = current_time
 
                 if self.current_alarm != last_alarm:
-                    c = (self.alarm_color[0] * 0.5, self.alarm_color[1] * 0.5, self.alarm_color[2] * 0.5)
+                    c = (self.alarm_color[0] * 0.75, self.alarm_color[1] * 0.75, self.alarm_color[2] * 0.75)
                     self.render_alarm(self.current_alarm, c)
                     pygame.display.update()
                     last_alarm = self.current_alarm
@@ -307,7 +325,7 @@ if __name__ == '__main__' :
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
     parser = argparse.ArgumentParser(description='Raspberry Pi alarm clock')
-    parser.add_argument('-a', '--alarm', default='15:51', help='alarm time')
+    parser.add_argument('-a', '--alarm', default='7:00', help='alarm time')
     parser.add_argument('-d', '--debug', action='store_true', help='debug execution')
     parser.add_argument('--iobroker', default='192.168.137.83:8082', help='iobroker IP address and port')
     parser.add_argument('-L', '--locale', default='de_DE.UTF-8', help='locale')
@@ -325,4 +343,3 @@ if __name__ == '__main__' :
     clock.current_alarm = args.alarm
     clock.alarm_sound = args.sound
     clock.run()
-    #clock.play_alarm()
