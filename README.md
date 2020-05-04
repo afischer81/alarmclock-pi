@@ -22,22 +22,50 @@ It should
 
 ## Installation
 
-* Enable boot in graphical desktop with autologin
-* Create an .xsession file that disables screensaver, screen blanking and starts the clock in an eternal loop
-
+* system initialization
 ```
-sudo /usr/bin/xset s off
-sudo /usr/bin/xset -dpms
-sudo /usr/bin/xset s noblank
-
-cd projects/alarmclock-pi
-while :
-do
-    python3 alarmclock.py
-done
+sudo apt-get update && sudo apt-get -y upgrade
 ```
+* adjust locale, timezone, WiFi country, hostname via raspi-config
+* configure network, if necessary
+* adjust /etc/systemd/timesyncd.conf
+* apt-get install -y git
+* git clone https://github.com/afischer81/alarmclock-pi.git
+* install LCD display driver
+```
+./install.sh lcd
+```
+* install further packages (lightdm, python)
+```
+./install.sh packages
+```
+* install X session startup file
+```
+./install.sh xsession
+```
+* enable boot into graphical desktop with autologin via raspi-config
 
 ## Usage
+
+### Command line options
+
+```
+usage: alarmclock.py [-h] [-a ALARM] [-d] [--iobroker IOBROKER] [-L LOCALE]
+                     [-s SOUND]
+
+Raspberry Pi alarm clock
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -a ALARM, --alarm ALARM
+                        alarm time
+  -d, --debug           debug execution
+  --iobroker IOBROKER   iobroker IP address and port
+  -L LOCALE, --locale LOCALE
+                        set locale
+  -s SOUND, --sound SOUND
+                        alarm sound
+```
 
 ### Regular operation
 
