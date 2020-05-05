@@ -31,16 +31,17 @@ class AlarmClock:
             self.log = logging.getLogger(__name__)
 
         self.default_color = (255, 255, 255)
-        self.alarm_color = (255, 0, 0)
+        self.night_color = (96, 96, 96)
+        self.alarm_color = (192, 0, 0)
         self.bg_color = (0, 0, 0)
         self.ui_event = {}
         self.state = ClockState.RUN
         self.alarm_days = { "Mo" : True, "Di" : True, "Mi": True, "Do" : True, "Fr" : True, "Sa" : False, "So" : False }
         self.current_alarm = "7:00"
-        self.alarm_sound = 'sounds/Dominion.mp3'
+        self.alarm_sound = 'sounds/Coast To Coast.mp3'
         self.alarm_volume = [ 0.25, 0.9 ]
         self.alarm_start = None
-        self.alarm_length = 60 # seconds
+        self.alarm_length = 120 # seconds
         self.alarm_process = None
 
         from evdev import InputDevice, list_devices
@@ -176,7 +177,6 @@ class AlarmClock:
         """
         result = None
         for id, r in self.ui_event.items():
-            #self.log.debug('id {0} r {1}'.format(id, r))
             if not r.collidepoint(pos):
                 continue
             result = id
@@ -299,6 +299,8 @@ class AlarmClock:
 
                 if current_time != last_time:
                     c = copy.deepcopy(self.default_color)
+                    if current_time >= "22:00" and current_time < "7:00":
+                        c = copy.deepcopy(self.night_color)
                     if self.state == ClockState.ALARM:
                         c = (self.alarm_color[0], self.alarm_color[1], self.alarm_color[2])
                     self.render_time(current_time, c)
