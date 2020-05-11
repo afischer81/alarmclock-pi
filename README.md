@@ -44,7 +44,7 @@ sudo apt-get update && sudo apt-get -y upgrade
 ./install.sh xsession
 ```
 * enable boot into graphical desktop with autologin via raspi-config
-* create sounds folder and put an alarm sound MP3 file into it
+* create/adjust the config file for the radio station stream URLs [radio_streams.json](radio_streams.json)
 
 ## Usage
 
@@ -52,7 +52,7 @@ sudo apt-get update && sudo apt-get -y upgrade
 
 ```
 usage: alarmclock.py [-h] [-a ALARM] [-d] [--iobroker IOBROKER] [-L LOCALE]
-                     [-s SOUND]
+                     [-r]
 
 Raspberry Pi alarm clock
 
@@ -63,31 +63,37 @@ optional arguments:
   -d, --debug           debug execution
   --iobroker IOBROKER   iobroker IP address and port
   -L LOCALE, --locale LOCALE
-                        set locale
-  -s SOUND, --sound SOUND
-                        alarm sound
+                        locale
+  -r, --rotated         non rotated display (for debugging)
 ```
 
 ### Regular operation
 
 The clock shows the time, date, current week and the alarm time as shown in the image below.
 
-![alt text](img/clock1.jpg "Alarm clock display in (normal) running state")
+![alt text](img/clock1.png "Alarm clock display in (normal) running state")
 
 The time numbers and the alarm time are touch UI active (can be clicked).
 Clicking the alarm time in the lower right corner switches to alarm time editing display.
 The two brightness icons in the lower left can be used to adjust the brightness. 
-During the night (22:00 - 7:00) the color of the time display will be dimmed as well from (255,255,255) = white to (96,96,96) = medium gray because even with dimmed display the digit display is too bright for my taste.
+During the night (22:00 - 7:00) the color of the time display will be dimmed as well from (255,255,255) = white to (48,48,48) = gray because even with dimmed display the digit display is too bright for my taste.
 
 ### Alarm Editing
 
-![alt text](img/clock2.jpg "Alarm clock display in alarm editing state")
+![alt text](img/clock2.png "Alarm clock display in alarm editing state")
 
 The color switches to the alarm color and the upper and lower half of the hour and minute number can be clicked.
 Clicking the upper half will increase the corresponding number and clicking the lower half will reduce it.
 The active week days for the alarm are shown in the bottom. Each day can be clicked as well and will toggle its status.
 The alarm will only be active on selected days (in the image all).
 Clicking the alarm time in the lower right corner acknowledges and goes back to the normal state.
+
+### Radio playback
+
+![alt text](img/clock3.png "Alarm clock display in radio playback mode")
+
+Clicking the play/pause icon will start/stop the playback of the current radio station. The station name will be highlighted in light blue during playback.
+Stop is also active during an alarm. The loudspeaker +/- icons control the volume. 
 
 ### Alarm operation
 
