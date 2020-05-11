@@ -44,6 +44,7 @@ sudo apt-get update && sudo apt-get -y upgrade
 ./install.sh xsession
 ```
 * enable boot into graphical desktop with autologin via raspi-config
+* create sounds folder and put an alarm sound MP3 file into it
 
 ## Usage
 
@@ -75,6 +76,8 @@ The clock shows the time, date, current week and the alarm time as shown in the 
 
 The time numbers and the alarm time are touch UI active (can be clicked).
 Clicking the alarm time in the lower right corner switches to alarm time editing display.
+The two brightness icons in the lower left can be used to adjust the brightness. 
+During the night (22:00 - 7:00) the color of the time display will be dimmed as well from (255,255,255) = white to (96,96,96) = medium gray because even with dimmed display the digit display is too bright for my taste.
 
 ### Alarm Editing
 
