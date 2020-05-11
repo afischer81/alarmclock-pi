@@ -19,6 +19,7 @@ function do_packages {
         fonts-freefont-ttf \
         python3-pygame \
         python3-evdev \
+        python3-psutil \
         python3-requests
     sudo mkdir -p /var/lib/lightdm/data
     sudo chown lightdm.lightdm /var/lib/lightdm/data
