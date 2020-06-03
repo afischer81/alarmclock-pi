@@ -44,9 +44,9 @@ class AlarmClock:
         self.alarm_days = { "Mo" : True, "Di" : True, "Mi": True, "Do" : True, "Fr" : True, "Sa" : False, "So" : False }
         self.current_alarm = "7:00"
         self.radio_streams = []
-        self.alarm_volume = [ 25, 70 ]
+        self.alarm_volume = [ 50, 90 ]
         self.play_start = None
-        self.alarm_length = 120 # seconds
+        self.alarm_length = [ 60, 300 ] # volume rise period, total alarm length in seconds
         self.play_process = None
         self.get_volume_cmd = 'amixer get \'PCM,0\''
         self.set_volume_cmd = 'amixer set \'PCM,0\' {0}%'
@@ -287,18 +287,25 @@ class AlarmClock:
             #
             if self.state == ClockState.RUN and self.play_process is None and self.alarm_days[current_day] and current_time == self.current_alarm:
                 self.log.info('alarm {0} {1} play {2}'.format(current_day, current_time, self.current_radio))
+                self.set_volume(self.alarm_volume[0])
+                self.set_brightness(50)
                 self.play_process = multiprocessing.Process(target=self.play)
                 self.play_start = now
                 self.play_process.start()
                 self.state = ClockState.ALARM
                 last_time = None
-            if self.state == ClockState.ALARM and now - self.play_start > datetime.timedelta(seconds=self.alarm_length):
-                self.log.info('alarm stop {0}'.format(current_time))
-                self.stop()
-                self.play_process = None
-                self.play_start = None
-                self.state = ClockState.RUN
-                last_time = None
+            if self.state == ClockState.ALARM:
+                alarm_duration = now - self.play_start
+                if alarm_duration > datetime.timedelta(seconds=self.alarm_length[1]):
+                    self.log.info('alarm stop {0}'.format(current_time))
+                    self.stop()
+                    self.play_process = None
+                    self.play_start = None
+                    self.state = ClockState.RUN
+                    last_time = None
+                elif alarm_duration < datetime.timedelta(seconds=self.alarm_length[0]):
+                    volume = self.alarm_volume[0] + (self.alarm_volume[1] - self.alarm_volume[0]) * alarm_duration.total_seconds() / self.alarm_length[0]
+                    self.set_volume(volume)
 
             for event in pygame.event.get():
                 if not event.type is MOUSEBUTTONUP:
@@ -442,7 +449,6 @@ if __name__ == '__main__' :
     parser.add_argument('--iobroker', default='192.168.137.83:8082', help='iobroker IP address and port')
     parser.add_argument('-L', '--locale', default='de_DE.UTF-8', help='locale')
     parser.add_argument('-r', '--rotated', action='store_false', help='non rotated display (for debugging)')
-    parser.add_argument('-s', '--sound', default='', help='alarm sound')
     args = parser.parse_args(sys.argv[1:])
 
     if args.debug:
