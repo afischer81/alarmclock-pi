@@ -169,9 +169,9 @@ class PygameUi:
         s = self.text_font.size('ABC')
         x = round(0.075 * self.w)
         y = round(0.925 * self.h)
-        self.screen.fill(self.bg_color, rect=(x, y - s[1] / 2 - 2, 0.825 * self.w, s[1] + 4))
+        self.screen.fill(self.bg_color, rect=(0, y - s[1] / 2 - 2, self.w, s[1] + 4))
         self.log.debug('rendering menu {} with {} elements'.format(menu, len(self.menu[menu])))
-        self.log.debug(json.dumps(self.menu[menu], indent=2, default=str))
+        #self.log.debug(json.dumps(self.menu[menu], indent=2, default=str))
         w = 0
         for elem in self.menu[menu]:
             elem_width = 0

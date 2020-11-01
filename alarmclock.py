@@ -181,22 +181,15 @@ class AlarmClock(PygameUi):
         """
         Get the next alarm time.
         """
-        week_days = { "So": 0, "Mo": 1, "Di": 2, "Mi": 3, "Do": 4, "Fr": 5, "Sa": 6 }
         result = "--:--"
-        td = int(time.strftime('%w'))
-        for day, alarm in self.config['alarms'].items():
-            if not alarm:
-                continue
-            d = week_days[day]
-            if len(alarm) < 5:
-                alarm = '0' + alarm
+        today = time.strftime('%a')
+        tomorrow = (time + datetime.timedelta(days=1)).strftime('%a')
+        if self.config['alarms'][today]:
             tt = time.strftime('%H:%M')
-            if d == td and tt <= alarm:
-                result = alarm
-                break
-            if d == (td + 1) % 7:
-                result = alarm
-                break
+            if tt <= self.config['alarms'][today]:
+                result = self.config['alarms'][today]
+        if result == "--:--" and self.config['alarms'][tomorrow]:
+            result = self.config['alarms'][tomorrow]
         if result[0] == '0':
             result = result[1:]
         return result
@@ -250,9 +243,9 @@ class AlarmClock(PygameUi):
             now = datetime.datetime.now()
             current_day = now.strftime('%a')
             current_time = now.strftime('%H:%M')
+            if current_time.endswith('07'):
+                self.update_alarms()
             self.current_alarm = self.next_alarm(now)
-            #self.current_alarm = '20:30'
-            #self.alarm_days[current_day] = '20:30'
             self.menu['bottom'][-1]['label'] = self.current_alarm
 
             #
@@ -416,11 +409,9 @@ class AlarmClock(PygameUi):
                     do_update = True
                     last_radio = self.current_radio
 
-                #if self.current_alarm != last_alarm:
-                #    c = (self.alarm_color[0] * 0.75, self.alarm_color[1] * 0.75, self.alarm_color[2] * 0.75)
-                #    self.render_alarm(self.current_alarm, c)
-                #    pygame.display.update()
-                #    last_alarm = self.current_alarm
+            if self.current_alarm != last_alarm:
+                self.render_bottom(current_menu)
+                last_alarm = self.current_alarm
 
             if current_menu != last_menu:
                 self.render_bottom(current_menu)
@@ -444,7 +435,6 @@ if __name__ == '__main__' :
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
     parser = argparse.ArgumentParser(description='Raspberry Pi alarm clock')
-    parser.add_argument('-a', '--alarm', default='', help='alarm time')
     parser.add_argument('-c', '--config', default='alarmclock.json', help='config file')
     parser.add_argument('-d', '--debug', action='store_true', help='debug execution')
     parser.add_argument('--iobroker', default='192.168.137.83:8082', help='iobroker IP address and port')
@@ -461,5 +451,4 @@ if __name__ == '__main__' :
  
     ui = AlarmClock(config=args.config, iobroker=args.iobroker, logger=log)
     ui.rotated_display = args.rotated
-    ui.current_radio = 'WDR2'
     ui.run()
