@@ -162,7 +162,7 @@ class PygameUi:
         surface = self.text_font.render(date, True, color)
         self.screen.blit(surface, (x, y))
 
-    def render_bottom(self, menu='bottom', dx=24):
+    def render_bottom(self, menu='bottom', default_color=(255,255,255), dx=24):
         """
         Draw bottom row elements.
         """
@@ -209,7 +209,7 @@ class PygameUi:
                     label = elem['label']
                 else:
                     label = elem['name']
-                color = self.default_color
+                color = (default_color[0], default_color[1], default_color[2])
                 if 'color' in elem.keys():
                     color = elem['color']
                 align = 'cc'

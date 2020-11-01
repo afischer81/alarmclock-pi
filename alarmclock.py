@@ -243,10 +243,13 @@ class AlarmClock(PygameUi):
             now = datetime.datetime.now()
             current_day = now.strftime('%a')
             current_time = now.strftime('%H:%M')
-            if current_time.endswith('07'):
+            if now.hour >= 6 and now.hour <= 23 and (now.minute == 23 or now.minute == 53):
                 self.update_alarms()
             self.current_alarm = self.next_alarm(now)
             self.menu['bottom'][-1]['label'] = self.current_alarm
+            if now.hour == 22 and now.minute == 13:
+                self.set_brightness(10)
+                self.render_bottom(current_menu, color=self.night_color)
 
             #
             # state handling
@@ -388,12 +391,16 @@ class AlarmClock(PygameUi):
                 current_date = now.strftime('%a %d. %b, %W. Woche')
                 if current_date != last_date:
                     c = (self.default_color[0] * 0.75, self.default_color[1] * 0.75, self.default_color[2] * 0.75)
+                    if now.hour >= 22 or now.hour <= 6:
+                        c = (self.night_color[0], self.night_color[1], self.night_color[2])
                     self.render_top(current_date, c)
                     do_update = True
                     last_date = current_date
 
                 if current_time != last_time:
                     c = copy.deepcopy(self.default_color)
+                    if now.hour >= 22 or now.hour <= 6:
+                        c = (self.night_color[0], self.night_color[1], self.night_color[2])
                     if self.state == ClockState.ALARM:
                         c = (self.alarm_color[0], self.alarm_color[1], self.alarm_color[2])
                     self.render_time(current_time, c)
@@ -436,7 +443,7 @@ if __name__ == '__main__' :
 
     parser = argparse.ArgumentParser(description='Raspberry Pi alarm clock')
     parser.add_argument('-c', '--config', default='alarmclock.json', help='config file')
-    parser.add_argument('-d', '--debug', action='store_true', help='debug execution')
+    parser.add_argument('-d', '--debug', action='store_false', help='debug execution')
     parser.add_argument('--iobroker', default='192.168.137.83:8082', help='iobroker IP address and port')
     parser.add_argument('-L', '--locale', default='de_DE.UTF-8', help='locale')
     parser.add_argument('-r', '--rotated', action='store_true', help='non rotated display (for debugging)')
