@@ -1,0 +1,38 @@
+[
+    {
+        "name": "bright-",
+        "label": "",
+        "icon" : "icons/brightness_down.png",
+        "size": [48, 48]
+    },
+    { 
+        "name": "bright+",
+        "label": "",
+        "icon": "icons/brightness_up.png",
+        "size": [48, 48]
+    },
+    {
+        "name": "vol-",
+        "label": "",
+        "icon" : "icons/volume_down.png",
+        "size": [48, 48]
+    },
+    { 
+        "name": "mute",
+        "label": "",
+        "icon": "icons/volume_mute.png",
+        "size": [48, 48]
+    },
+    { 
+        "name": "play",
+        "label": "",
+        "icon": "icons/play_pause.png",
+        "size": [48, 48]
+    },
+    { 
+        "name": "vol+",
+        "label": "",
+        "icon": "icons/volume_up.png",
+        "size": [48, 48]
+    }
+]
