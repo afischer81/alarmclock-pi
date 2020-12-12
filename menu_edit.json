@@ -1,24 +1,7 @@
 [
     {
-        "name": "Mo"
-    },
-    { 
-        "name": "Di"
-    }, 
-    { 
-        "name": "Mi"
-    }, 
-    { 
-        "name": "Do"
-    }, 
-    { 
-        "name": "Fr"
-    }, 
-    { 
-        "name": "Sa" 
-    }, 
-    { 
-        "name": "So" 
+        "name": "cancel",
+        "label": "X"
     },
     {
         "name": "hour+",
