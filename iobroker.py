@@ -174,7 +174,7 @@ class IoBroker(object):
         result = None
         self.log.debug('get({0}) start'.format(self.url + url))
         try:
-            response = requests.get(self.url + url)
+            response = requests.get(self.url + url, timeout=10)
             if response.status_code == 200:
                 result = response.json()
             else:
@@ -191,7 +191,7 @@ class IoBroker(object):
         """
         result = None
         try:
-            response = requests.post(self.url + url)
+            response = requests.post(self.url + url, timeout=10)
             result = response.status_code == 200
         except:
             self.log.critical('ioBroker connection to {0} failed'.format(self.url))

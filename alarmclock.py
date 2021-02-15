@@ -116,8 +116,6 @@ class AlarmClock(PygameUi):
         c = (self.default_color[0] * 0.04, self.default_color[1] * 0.04, self.default_color[2] * 0.04)
         self.screen.fill(c, (0.075 * self.w, 0.18 * self.h, 0.85 * self.w, 0.64 * self.h))
         [ hh, mm ] = time.split(':')
-        if hh[0] == '0':
-            hh = hh[1:]
         s = self.time_font.size(hh)
         x = round((0.075 + 0.2) * self.w - s[0] / 2)
         y = round(0.5 * self.h - s[1] / 2)
@@ -160,7 +158,7 @@ class AlarmClock(PygameUi):
             except:
                 pass
             s = self.text_font.size(t1)
-            self.screen.fill(self.bg_color, rect=(0, y - s[1] / 2, 0.125 * self.w, s[1]))
+            self.screen.fill(self.bg_color, rect=(0, y - s[1] / 2, 0.175 * self.w, s[1]))
             self.render_text(0.025 * self.w, y, t1, color=color, align='lc')
         if not temp2 is None:
             t2 = '-'
@@ -169,7 +167,7 @@ class AlarmClock(PygameUi):
             except:
                 pass
             s = self.text_font.size(t2)
-            self.screen.fill(self.bg_color, rect=(0.875 * self.w, y - s[1] / 2, 0.125 * self.w, s[1]))
+            self.screen.fill(self.bg_color, rect=(0.825 * self.w, y - s[1] / 2, 0.175 * self.w, s[1]))
             self.render_text(0.975 * self.w, y, t2, color=color, align='rc')
 
     def get_temp(self, ids):
@@ -194,6 +192,51 @@ class AlarmClock(PygameUi):
         self.log.info('render alarm {0}'.format(alarm))
         self.render_time(alarm, color, menu)
 
+<<<<<<< HEAD
+    def update_alarms(self, id='javascript.0.rooms.sz.alarm'):
+        """
+        Update alarms from iobroker entry.
+        """
+        alarm = self.iobroker.get_value(id)
+        if alarm is None:
+            return
+        log.info('new alarms from {} {}'.format(id, alarm))
+        self.config['alarms']['Mo'] = alarm
+        self.config['alarms']['Di'] = alarm
+        self.config['alarms']['Mi'] = alarm
+        self.config['alarms']['Do'] = alarm
+        self.config['alarms']['Fr'] = alarm
+        self.config['alarms']['Sa'] = alarm
+        self.config['alarms']['So'] = alarm
+        self.alarm_days = self.config['alarms']
+        self.write_config()
+
+    def next_alarm(self, time=None):
+        """
+        Get the next alarm time.
+        """
+        if time is None:
+            time = datetime.datetime.now()
+        result = "--:--"
+        today = time.strftime('%a')
+        tomorrow = (time + datetime.timedelta(days=1)).strftime('%a')
+        log.info('today {} {} tomorrow {} {}'.format(today, self.config['alarms'][today], tomorrow, self.config['alarms'][tomorrow]))
+        tt = time.hour * 60 + time.minute
+        if self.config['alarms'][today]:
+            at = list(map(float, self.config['alarms'][today].split(':')))
+            at = at[0] * 60 + at[1]
+            if tt < at:
+                result = self.config['alarms'][today]
+        if result == "--:--" and self.config['alarms'][tomorrow]:
+            at = list(map(float, self.config['alarms'][tomorrow].split(':')))
+            at = at[0] * 60 + at[1]
+            if tt > at:
+                result = self.config['alarms'][tomorrow]
+        if result[0] == '0':
+            result = result[1:]
+        log.info('next_alarm {}'.format(result))
+        return result
+=======
     def update_alarm(self):
         """
         Get the next alarm time.
@@ -210,6 +253,7 @@ class AlarmClock(PygameUi):
             self.next_alarm = self.next_alarm[1:]
         self.menu['bottom'][-1]['label'] = self.next_alarm
         return
+>>>>>>> cf52dacd050e6807249e791ca1cb01678b7e552f
 
     def play(self):
         """
@@ -262,7 +306,7 @@ class AlarmClock(PygameUi):
 
             now = datetime.datetime.now()
             current_day = now.strftime('%a')
-            current_time = now.strftime('%H:%M')
+            current_time = now.strftime('%-H:%M')
             if now.hour >= 6 and now.hour <= 23 and (now.minute == 23 or now.minute == 53) and tick == 2:
                 self.update_alarm()
             self.current_alarm = self.next_alarm
@@ -270,6 +314,7 @@ class AlarmClock(PygameUi):
             if now.hour == 22 and now.minute == 13 and tick == 2:
                 self.set_brightness(10)
                 self.render_bottom(current_menu, default_color=self.night_color)
+                last_date = None
             if (now.minute % 5) == 0 and tick == 2:
                 [ temp1, temp2 ] = self.get_temp(self.config['temperatures'])
 
