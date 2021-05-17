@@ -33,9 +33,9 @@ class AlarmClock(PygameUi):
     def __init__(self, size=(800,480), config=None, iobroker=None, logger=None) :
         PygameUi.__init__(self, size, logger)
 
-        self.next_alarm = '--:--'
         self.alarm_volume = [ 50, 90 ]
         self.alarm_length = [ 60, 300 ] # volume rise period, total alarm length in seconds
+        self.next_alarm = '--:--'
         self.manual_alarm = False
 
         self.config_file_name = config
@@ -67,7 +67,6 @@ class AlarmClock(PygameUi):
         self.menu['bottom'].append({ 'name': 'alarm', 'label': self.next_alarm, 'pos': (0.925, 0.925), 'color': self.alarm_color, 'align':'rc' })
         self.menu['edit'].append(self.menu['bottom'][-1])
 
-        self.update_alarm()
         self.set_brightness(self.config['brightness'])
 
     def read_config(self, file_name):
@@ -117,8 +116,6 @@ class AlarmClock(PygameUi):
         c = (self.default_color[0] * 0.04, self.default_color[1] * 0.04, self.default_color[2] * 0.04)
         self.screen.fill(c, (0.075 * self.w, 0.18 * self.h, 0.85 * self.w, 0.64 * self.h))
         [ hh, mm ] = time.split(':')
-        if hh[0] == '0':
-            hh = hh[1:]
         s = self.time_font.size(hh)
         x = round((0.075 + 0.2) * self.w - s[0] / 2)
         y = round(0.5 * self.h - s[1] / 2)
@@ -157,20 +154,20 @@ class AlarmClock(PygameUi):
         if not temp1 is None:
             t1 = '-'
             try:
-                t1 = '{:.1f}°'.format(float(temp1))
+                t1 = '{:.1f}°C'.format(float(temp1))
             except:
                 pass
             s = self.text_font.size(t1)
-            self.screen.fill(self.bg_color, rect=(0, y - s[1] / 2, 0.125 * self.w, s[1]))
+            self.screen.fill(self.bg_color, rect=(0, y - s[1] / 2, 0.175 * self.w, s[1]))
             self.render_text(0.025 * self.w, y, t1, color=color, align='lc')
         if not temp2 is None:
             t2 = '-'
             try:
-                t2 = '{:.1f}°'.format(float(temp2))
+                t2 = '{:.1f}°C'.format(float(temp2))
             except:
                 pass
             s = self.text_font.size(t2)
-            self.screen.fill(self.bg_color, rect=(0.875 * self.w, y - s[1] / 2, 0.125 * self.w, s[1]))
+            self.screen.fill(self.bg_color, rect=(0.825 * self.w, y - s[1] / 2, 0.175 * self.w, s[1]))
             self.render_text(0.975 * self.w, y, t2, color=color, align='rc')
 
     def get_temp(self, ids):
@@ -195,22 +192,17 @@ class AlarmClock(PygameUi):
         self.log.info('render alarm {0}'.format(alarm))
         self.render_time(alarm, color, menu)
 
-    def update_alarm(self):
+    def update_alarms(self, id='javascript.0.rooms.sz.alarm'):
         """
-        Get the next alarm time.
+        Update alarms from iobroker entry.
         """
-
-        try:
-            self.next_alarm = self.iobroker.get_value('javascript.0.rooms.sz.alarm')
-        except:
-            self.log.error('cannot get next alarm from iobroker {}'.format(self.iobroker.host))
-            pass
-        if not self.next_alarm:
-            self.next_alarm = '--:--'
-        if self.next_alarm[0] == '0':
-            self.next_alarm = self.next_alarm[1:]
-        self.menu['bottom'][-1]['label'] = self.next_alarm
-        return
+        alarm = self.iobroker.get_value(id)
+        if alarm:
+            log.info('new alarms from {} {}'.format(id, alarm))
+            self.write_config()
+        else:
+            alarm = '--:--'
+        return alarm
 
     def play(self):
         """
@@ -249,6 +241,7 @@ class AlarmClock(PygameUi):
         last_date = None
         last_time = None
         last_alarm = None
+        self.next_alarm = self.update_alarms()
         self.edit_alarm = None
         last_state = None
         last_radio = None
@@ -263,14 +256,15 @@ class AlarmClock(PygameUi):
 
             now = datetime.datetime.now()
             current_day = now.strftime('%a')
-            current_time = now.strftime('%H:%M')
+            current_time = now.strftime('%-H:%M')
             if now.hour >= 6 and now.hour <= 23 and (now.minute == 23 or now.minute == 53) and tick == 2:
-                self.update_alarm()
-            self.current_alarm = self.next_alarm
-            self.menu['bottom'][-1]['label'] = self.current_alarm
+                if not self.manual_alarm:
+                    self.next_alarm = self.update_alarms()
+            self.menu['bottom'][-1]['label'] = self.next_alarm
             if now.hour == 22 and now.minute == 13 and tick == 2:
                 self.set_brightness(10)
                 self.render_bottom(current_menu, default_color=self.night_color)
+                last_date = None
             if (now.minute % 5) == 0 and tick == 2:
                 [ temp1, temp2 ] = self.get_temp(self.config['temperatures'])
 
@@ -317,6 +311,7 @@ class AlarmClock(PygameUi):
                         if self.state == ClockState.EDIT:
                             self.state = ClockState.RUN
                             current_menu = 'bottom'
+                            last_menu = None
                             self.next_alarm = self.edit_alarm
                             self.menu['bottom'][-1]['label'] = self.next_alarm
                             self.manual_alarm = True
@@ -326,18 +321,22 @@ class AlarmClock(PygameUi):
                             self.state = ClockState.EDIT
                             self.edit_alarm = self.next_alarm
                             if self.edit_alarm == '--:--':
-                                self.edit_alarm = current_time
+                                self.edit_alarm = '7:00'
                             last_alarm = None
                             current_menu = 'edit'
+                            last_menu = None
                         elif self.state == ClockState.ALARM:
                             self.state = ClockState.RUN
                             last_time = None
                         self.log.info('state {0}'.format(self.state))
                     elif elem['name'] == 'cancel':
                         if self.state == ClockState.EDIT:
+                            self.state = ClockState.RUN
                             self.next_alarm = '--:--'
+                            self.menu['bottom'][-1]['label'] = self.next_alarm
                             last_alarm = None
-                            current_menu = 'edit'
+                            last_time = None
+                            current_menu = 'bottom'
                             self.manual_alarm = False
                     elif elem['label'] == 'play':
                         if self.play_process == None:
@@ -444,9 +443,9 @@ class AlarmClock(PygameUi):
                     do_update = True
                     last_radio = self.current_radio
 
-            if self.current_alarm != last_alarm:
+            if self.next_alarm != last_alarm:
                 self.render_bottom(current_menu)
-                last_alarm = self.current_alarm
+                last_alarm = self.next_alarm
 
             if current_menu != last_menu:
                 self.render_bottom(current_menu)
@@ -475,7 +474,7 @@ if __name__ == '__main__' :
     parser.add_argument('-d', '--debug', action='store_false', help='debug execution')
     parser.add_argument('--iobroker', default='192.168.137.83:8082', help='iobroker IP address and port')
     parser.add_argument('-L', '--locale', default='de_DE.UTF-8', help='locale')
-    parser.add_argument('-r', '--rotated', action='store_true', help='non rotated display (for debugging)')
+    parser.add_argument('-r', '--rotated', action='store_false', help='non rotated display (for debugging)')
     args = parser.parse_args(sys.argv[1:])
 
     if args.debug:
