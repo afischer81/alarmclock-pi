@@ -51,6 +51,11 @@ EOF
     sudo chmod g+w /sys/class/backlight/rpi_backlight/brightness
 }
 
+function test_audio {
+    amixer set PCM,0 25%
+    aplay http://wdr-wdr2-aachenundregion.icecast.wdr.de/wdr/wdr2/aachenundregion/mp3/128/stream.mp3
+}
+
 task=$1
 shift
 do_$task $*
