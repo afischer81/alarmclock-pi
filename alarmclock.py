@@ -36,6 +36,7 @@ class AlarmClock(PygameUi):
         self.next_alarm = '--:--'
         self.alarm_volume = [ 50, 90 ]
         self.alarm_length = [ 60, 300 ] # volume rise period, total alarm length in seconds
+        self.manual_alarm = False
 
         self.config_file_name = config
         self.config = self.read_config(config)
@@ -318,6 +319,7 @@ class AlarmClock(PygameUi):
                             current_menu = 'bottom'
                             self.next_alarm = self.edit_alarm
                             self.menu['bottom'][-1]['label'] = self.next_alarm
+                            self.manual_alarm = True
                             last_time = None
                             last_alarm = None
                         elif self.state == ClockState.RUN:
@@ -331,7 +333,12 @@ class AlarmClock(PygameUi):
                             self.state = ClockState.RUN
                             last_time = None
                         self.log.info('state {0}'.format(self.state))
-                    elif elem['label'] == 'cancel':
+                    elif elem['name'] == 'cancel':
+                        if self.state == ClockState.EDIT:
+                            self.next_alarm = '--:--'
+                            last_alarm = None
+                            current_menu = 'edit'
+                            self.manual_alarm = False
                     elif elem['label'] == 'play':
                         if self.play_process == None:
                             if self.state == ClockState.RUN:
