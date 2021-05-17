@@ -352,7 +352,11 @@ class AlarmClock(PygameUi):
                             self.play_start = None
                             if self.state == ClockState.ALARM:
                                 self.state = ClockState.RUN
+                                self.manual_alarm = False
+                                self.next_alarm = '--:--'
+                                last_alarm = None
                                 last_time = None
+                                last_menu = None
                         last_radio = None
                     elif elem['label'] == 'radio':
                         if self.state == ClockState.RUN:
