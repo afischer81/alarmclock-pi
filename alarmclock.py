@@ -262,8 +262,14 @@ class AlarmClock(PygameUi):
                     self.next_alarm = self.update_alarms()
             self.menu['bottom'][-1]['label'] = self.next_alarm
             if now.hour == 22 and now.minute == 13 and tick == 2:
+                # turn dark at night
                 self.set_brightness(10)
                 self.render_bottom(current_menu, default_color=self.night_color)
+                last_date = None
+            elif now.hour == 6 and now.minute == 59 and tick == 2:
+                # turn bright for the day
+                self.set_brightness(50)
+                self.render_bottom(current_menu)
                 last_date = None
             if (now.minute % 5) == 0 and tick == 2:
                 [ temp1, temp2 ] = self.get_temp(self.config['temperatures'])
@@ -389,14 +395,16 @@ class AlarmClock(PygameUi):
                             volume = self.get_volume()
                             if elem['label'] == 'bright-' and brightness >= 20:
                                 brightness -= 10
+                                self.set_brightness(brightness)
                             elif elem['label'] == 'bright+' and brightness <= 245:
                                 brightness += 10
+                                self.set_brightness(brightness)
                             elif elem['label'] == 'vol-' and volume > 10:
                                 volume -= 10
+                                self.set_volume(volume)
                             elif elem['label'] == 'vol+' and volume <= 150:
                                 volume += 10
-                            self.set_brightness(brightness)
-                            self.set_volume(volume)
+                                self.set_volume(volume)
 
             if self.state != last_state:
                 self.log.info('state {} menu {}'.format(self.state, current_menu))
