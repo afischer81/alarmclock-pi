@@ -198,8 +198,9 @@ class AlarmClock(PygameUi):
         """
         alarm = self.iobroker.get_value(id)
         if alarm:
-            log.info('new alarms from {} {}'.format(id, alarm))
-            self.write_config()
+            if alarm[0] == '0':
+                alarm = alarm[1:]
+            log.info('new alarm from {} {}'.format(id, alarm))
         else:
             alarm = '--:--'
         return alarm
